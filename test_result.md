@@ -225,6 +225,19 @@ backend:
           agent: "testing"
           comment: "✅ Admin functionality working correctly: Analytics endpoint returning proper counts (users, products, orders, revenue), verify influencer working, list all users working, proper admin-only access control enforced"
 
+
+  - task: "Admin Users Management Enhanced APIs"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Enhanced existing admin/users endpoint to include is_banned, followers_count, following_count. Added new endpoints: PUT /api/admin/unban-user/{user_id}, PUT /api/admin/unverify-influencer/{user_id} to toggle user status."
+
 frontend:
   - task: "Splash Screen & Navigation"
     implemented: true
