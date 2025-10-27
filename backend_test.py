@@ -1087,6 +1087,12 @@ class SkyratingAPITester:
         self.test_admin_list_users()
         print()
 
+        # HIGH PRIORITY - Enhanced Admin Users Management APIs (NEW)
+        print("🔧 HIGH: ENHANCED ADMIN USERS MANAGEMENT")
+        print("-" * 30)
+        self.test_admin_enhanced_users_management()
+        print()
+
         # NEW FEATURES TESTS (PRODUCTION)
         print("🚀 PRODUCTION: NEW FEATURES TESTS")
         print("-" * 30)
