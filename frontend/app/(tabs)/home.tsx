@@ -68,6 +68,32 @@ export default function HomeScreen() {
     }
   };
 
+  const handleAddToCart = async () => {
+    const product = products[currentIndex];
+    try {
+      const cart = await AsyncStorage.getItem('cart');
+      const cartItems = cart ? JSON.parse(cart) : [];
+      
+      const existingItem = cartItems.find((item: any) => item.product_id === product._id);
+      if (existingItem) {
+        existingItem.quantity += 1;
+      } else {
+        cartItems.push({
+          product_id: product._id,
+          name: product.name,
+          price: product.price,
+          quantity: 1,
+          image: product.images?.[0]
+        });
+      }
+      
+      await AsyncStorage.setItem('cart', JSON.stringify(cartItems));
+      Alert.alert('Success', 'Added to cart!');
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
