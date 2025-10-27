@@ -7,7 +7,8 @@ import {
   ActivityIndicator,
   Image,
   TouchableOpacity,
-  Alert
+  Alert,
+  ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,10 +21,18 @@ const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [products, setProducts] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState('');
+  const [brands, setBrands] = useState([]);
+  
+  // Filter states
+  const [selectedBrand, setSelectedBrand] = useState('all');
+  const [selectedGender, setSelectedGender] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     loadProducts();
