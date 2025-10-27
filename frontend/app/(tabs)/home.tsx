@@ -522,4 +522,73 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 14,
   },
+  resetButton: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  resetButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  filtersContainer: {
+    maxHeight: 120,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  filtersContent: {
+    alignItems: 'flex-start',
+    gap: 8,
+  },
+  filterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#1a1a1a',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  filterButtonActive: {
+    backgroundColor: '#fff',
+    borderColor: '#fff',
+  },
+  filterText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  filterTextActive: {
+    color: '#000',
+  },
+  filterGroup: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+  },
+  filterChip: {
+    backgroundColor: '#1a1a1a',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  filterChipSelected: {
+    backgroundColor: '#fff',
+    borderColor: '#fff',
+  },
+  filterChipText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  filterChipTextSelected: {
+    color: '#000',
+  },
 });
