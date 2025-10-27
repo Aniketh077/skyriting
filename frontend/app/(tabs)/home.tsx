@@ -35,8 +35,87 @@ export default function HomeScreen() {
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
-    loadProducts();
+    loadData();
   }, []);
+
+  useEffect(() => {
+    applyFilters();
+  }, [selectedBrand, selectedGender, selectedCategory, allProducts]);
+
+  const loadData = async () => {
+    try {
+      const storedToken = await AsyncStorage.getItem('token');
+      setToken(storedToken || '');
+      
+      const [productsRes, brandsRes] = await Promise.all([
+        axios.get(`${API_URL}/api/products/trending`),
+        axios.get(`${API_URL}/api/brands`)
+      ]);
+      
+      setAllProducts(productsRes.data);
+      setBrands(brandsRes.data);
+      setFilteredProducts(productsRes.data);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      Alert.alert('Error', 'Failed to load products');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const applyFilters = () => {
+    let filtered = [...allProducts];
+
+    if (selectedBrand !== 'all') {
+      filtered = filtered.filter(p => p.brand_id === selectedBrand);
+    }
+
+    if (selectedGender !== 'all') {
+      filtered = filtered.filter(p => p.gender === selectedGender);
+    }
+
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(p => p.category === selectedCategory);
+    }
+
+    setFilteredProducts(filtered);
+    setCurrentIndex(0); // Reset to first product when filters change
+  };
+
+  const handleLike = async () => {
+    if (!token) {
+      Alert.alert('Login Required', 'Please login to save items');
+      return;
+    }
+    
+    const product = filteredProducts[currentIndex];
+    try {
+      await axios.post(
+        `${API_URL}/api/wishlist/add/${product._id}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } catch (error: any) {
+      console.error('Error adding to wishlist:', error);
+    }
+    
+    // Move to next product
+    goToNextProduct();
+  };
+
+  const handleSkip = () => {
+    goToNextProduct();
+  };
+
+  const goToNextProduct = () => {
+    if (currentIndex < filteredProducts.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+    } else {
+      // Loop back to beginning
+      setCurrentIndex(0);
+      Alert.alert('All Done!', 'Starting over from the beginning');
+    }
+  };
 
   const loadProducts = async () => {
     try {
