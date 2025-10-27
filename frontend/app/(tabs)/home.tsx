@@ -157,6 +157,13 @@ export default function HomeScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity 
+          style={[styles.actionButton, styles.cartButton]}
+          onPress={handleAddToCart}
+        >
+          <Ionicons name="cart" size={28} color="#000" />
+        </TouchableOpacity>
+
+        <TouchableOpacity 
           style={[styles.actionButton, styles.likeButton]}
           onPress={handleSwipeRight}
         >
