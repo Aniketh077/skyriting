@@ -117,49 +117,8 @@ export default function HomeScreen() {
     }
   };
 
-  const loadProducts = async () => {
-    try {
-      const storedToken = await AsyncStorage.getItem('token');
-      setToken(storedToken || '');
-      
-      const response = await axios.get(`${API_URL}/api/products/trending`);
-      setProducts(response.data);
-    } catch (error) {
-      console.error('Error loading products:', error);
-      Alert.alert('Error', 'Failed to load products');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSwipeLeft = () => {
-    if (currentIndex < products.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    }
-  };
-
-  const handleSwipeRight = async () => {
-    if (!token) return;
-    
-    const product = products[currentIndex];
-    try {
-      await axios.post(
-        `${API_URL}/api/wishlist/add/${product._id}`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      Alert.alert('Added!', 'Product added to wishlist');
-    } catch (error: any) {
-      console.error('Error adding to wishlist:', error);
-    }
-    
-    if (currentIndex < products.length - 1) {
-      setCurrentIndex(currentIndex + 1);
-    }
-  };
-
   const handleAddToCart = async () => {
-    const product = products[currentIndex];
+    const product = filteredProducts[currentIndex];
     try {
       const cart = await AsyncStorage.getItem('cart');
       const cartItems = cart ? JSON.parse(cart) : [];
@@ -185,9 +144,8 @@ export default function HomeScreen() {
   };
 
   const handleBuyNow = async () => {
-    const product = products[currentIndex];
+    const product = filteredProducts[currentIndex];
     try {
-      // Add to cart first
       const cartItems = [{
         product_id: product._id,
         name: product.name,
@@ -197,7 +155,6 @@ export default function HomeScreen() {
       }];
       
       await AsyncStorage.setItem('cart', JSON.stringify(cartItems));
-      // Navigate to cart for checkout
       router.push('/(tabs)/cart');
     } catch (error) {
       console.error('Error with buy now:', error);
