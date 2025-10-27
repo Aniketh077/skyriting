@@ -619,8 +619,8 @@ async def get_all_orders(current_user: dict = Depends(get_admin_user)):
 async def update_order_status(order_id: str, status: str = Body(..., embed=True), current_user: dict = Depends(get_admin_user)):
     try:
         result = await db.orders.update_one(
-            {" _id": ObjectId(order_id)},
-            {" $set": {"status": status, "updated_at": datetime.utcnow()}}
+            {"_id": ObjectId(order_id)},
+            {"$set": {"status": status, "updated_at": datetime.utcnow()}}
         )
         
         if result.matched_count == 0:
