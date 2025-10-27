@@ -13,6 +13,7 @@ export default function RootLayout() {
         <Stack.Screen name="orders" />
         <Stack.Screen name="notifications" />
         <Stack.Screen name="brand/[id]" />
+        <Stack.Screen name="product/[id]" />
       </Stack>
     </GestureHandlerRootView>
   );
