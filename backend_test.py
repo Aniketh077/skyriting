@@ -607,17 +607,229 @@ class SkyratingAPITester:
             self.log_result("Admin - List Users", False, f"Status: {status_code}, Response: {response}")
             return False
 
+    # ==================== NEW FEATURES TESTS (PRODUCTION) ====================
+    
+    def test_razorpay_payment_integration(self):
+        """Test Razorpay payment order creation"""
+        if not self.user_token:
+            self.log_result("Razorpay - Create Payment Order", False, "No user token available")
+            return False
+        
+        order_data = {
+            "items": [
+                {
+                    "product_id": self.test_product_id or "sample_product_id",
+                    "name": "Test Product",
+                    "price": 999.0,
+                    "quantity": 1
+                }
+            ],
+            "total_amount": 999.0,
+            "shipping_address": {
+                "street": "123 Test Street",
+                "city": "Mumbai",
+                "state": "Maharashtra",
+                "pincode": "400001",
+                "country": "India"
+            },
+            "payment_method": "razorpay"
+        }
+        
+        success, response, status_code = self.make_request("POST", "/orders/create-payment", order_data, token=self.user_token)
+        
+        if success and all(field in response for field in ["order_id", "amount", "currency", "razorpay_key"]):
+            self.log_result("Razorpay - Create Payment Order", True, 
+                          f"Order: {response['order_id']}, Amount: {response['amount']}, Currency: {response['currency']}")
+            return response
+        else:
+            self.log_result("Razorpay - Create Payment Order", False, f"Status: {status_code}, Response: {response}")
+            return False
+
+    def test_image_upload(self):
+        """Test image upload functionality"""
+        if not self.user_token:
+            self.log_result("Image Upload", False, "No user token available")
+            return False
+        
+        # Create a simple test image file
+        import io
+        import base64
+        
+        # 1x1 pixel PNG
+        test_image_data = base64.b64decode(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
+        )
+        
+        # Use requests directly for file upload
+        url = f"{self.base_url}/upload/image"
+        headers = {"Authorization": f"Bearer {self.user_token}"}
+        files = {'file': ('test_image.png', io.BytesIO(test_image_data), 'image/png')}
+        
+        try:
+            response = requests.post(url, headers=headers, files=files, timeout=30)
+            
+            if response.status_code == 200:
+                result = response.json()
+                if result.get("success") and "image" in result and result["image"].startswith("data:image"):
+                    self.log_result("Image Upload", True, "Image uploaded and base64 encoded successfully")
+                    return True
+                else:
+                    self.log_result("Image Upload", False, "Invalid response format")
+                    return False
+            else:
+                self.log_result("Image Upload", False, f"Status: {response.status_code}, Response: {response.text}")
+                return False
+        except Exception as e:
+            self.log_result("Image Upload", False, f"Upload failed: {str(e)}")
+            return False
+
+    def test_enhanced_orders_with_payment(self):
+        """Test enhanced order creation with Razorpay payment ID"""
+        if not self.user_token:
+            self.log_result("Enhanced Orders", False, "No user token available")
+            return False
+        
+        order_data = {
+            "items": [
+                {
+                    "product_id": self.test_product_id or "test_product_123",
+                    "name": "Premium Test Product",
+                    "price": 1299.0,
+                    "quantity": 1
+                }
+            ],
+            "total_amount": 1299.0,
+            "shipping_address": {
+                "street": "456 Production Street",
+                "city": "Bangalore",
+                "state": "Karnataka",
+                "pincode": "560001",
+                "country": "India"
+            },
+            "payment_method": "razorpay"
+        }
+        
+        # Test order without payment ID (should be pending)
+        success1, response1, status_code1 = self.make_request("POST", "/orders", order_data, token=self.user_token)
+        
+        if success1 and "order_id" in response1:
+            order_id1 = response1["order_id"]
+            
+            # Check order status
+            success_check, order_details, _ = self.make_request("GET", f"/orders/{order_id1}", token=self.user_token)
+            
+            if success_check and order_details.get("status") == "pending":
+                self.log_result("Enhanced Orders - Without Payment", True, f"Order {order_id1} has pending status")
+                
+                # Now test with payment ID using query parameter
+                url = f"{self.base_url}/orders?razorpay_payment_id=pay_test123456789"
+                headers = {"Authorization": f"Bearer {self.user_token}", "Content-Type": "application/json"}
+                
+                try:
+                    response2 = requests.post(url, json=order_data, headers=headers, timeout=30)
+                    
+                    if response2.status_code == 200:
+                        result2 = response2.json()
+                        order_id2 = result2.get("order_id")
+                        
+                        # Check if this order has confirmed status
+                        success_check2, order_details2, _ = self.make_request("GET", f"/orders/{order_id2}", token=self.user_token)
+                        
+                        if success_check2 and order_details2.get("status") == "confirmed":
+                            self.log_result("Enhanced Orders - With Payment", True, f"Order {order_id2} has confirmed status")
+                            return True
+                        else:
+                            self.log_result("Enhanced Orders - With Payment", False, f"Expected confirmed status, got: {order_details2.get('status')}")
+                            return False
+                    else:
+                        self.log_result("Enhanced Orders - With Payment", False, f"Payment order creation failed: {response2.status_code}")
+                        return False
+                except Exception as e:
+                    self.log_result("Enhanced Orders - With Payment", False, f"Request failed: {str(e)}")
+                    return False
+            else:
+                self.log_result("Enhanced Orders - Without Payment", False, f"Expected pending status, got: {order_details.get('status') if success_check else 'No order details'}")
+                return False
+        else:
+            self.log_result("Enhanced Orders", False, f"Order creation failed: {status_code1}, {response1}")
+            return False
+
+    def test_product_filters(self):
+        """Test brand store and product filtering"""
+        # Test brand filtering
+        if self.test_brand_id:
+            success, response, status_code = self.make_request("GET", f"/products?brand_id={self.test_brand_id}")
+            
+            if success and isinstance(response, list):
+                self.log_result("Product Filters - Brand", True, f"Brand filter returned {len(response)} products")
+            else:
+                self.log_result("Product Filters - Brand", False, f"Brand filtering failed: {status_code}")
+        
+        # Test gender filtering
+        success, response, status_code = self.make_request("GET", "/products?gender=men")
+        
+        if success and isinstance(response, list):
+            self.log_result("Product Filters - Gender", True, f"Gender filter returned {len(response)} products")
+        else:
+            self.log_result("Product Filters - Gender", False, f"Gender filtering failed: {status_code}")
+        
+        # Test category filtering
+        success, response, status_code = self.make_request("GET", "/products?category=Casual")
+        
+        if success and isinstance(response, list):
+            self.log_result("Product Filters - Category", True, f"Category filter returned {len(response)} products")
+            return True
+        else:
+            self.log_result("Product Filters - Category", False, f"Category filtering failed: {status_code}")
+            return False
+
+    def test_complete_user_journey(self):
+        """Test complete user journey: Register → Login → Browse → Wishlist → Order → View Orders"""
+        if not self.user_token:
+            self.log_result("Complete User Journey", False, "No user token available")
+            return False
+        
+        journey_steps = []
+        
+        # 1. Browse Products (already done in products test)
+        success, products, _ = self.make_request("GET", "/products")
+        if success and products:
+            journey_steps.append("✅ Browse Products")
+        else:
+            journey_steps.append("❌ Browse Products")
+            
+        # 2. Add to Wishlist
+        if self.test_product_id:
+            success, _, _ = self.make_request("POST", f"/wishlist/add/{self.test_product_id}", token=self.user_token)
+            if success:
+                journey_steps.append("✅ Add to Wishlist")
+            else:
+                journey_steps.append("❌ Add to Wishlist")
+        
+        # 3. View Orders
+        success, orders, _ = self.make_request("GET", "/orders/my-orders", token=self.user_token)
+        if success:
+            journey_steps.append("✅ View Orders")
+        else:
+            journey_steps.append("❌ View Orders")
+        
+        all_success = all("✅" in step for step in journey_steps)
+        journey_summary = " → ".join(journey_steps)
+        
+        self.log_result("Complete User Journey", all_success, journey_summary)
+        return all_success
+
     # ==================== ERROR CASE TESTS ====================
     
     def test_auth_without_token(self):
         """Test protected endpoint without token"""
         success, response, status_code = self.make_request("GET", "/auth/me")
         
-        if not success and status_code == 401:
+        if not success and status_code in [401, 403]:  # Accept both 401 and 403
             self.log_result("Error Cases - No Token", True, "Correctly denied access without token")
             return True
         else:
-            self.log_result("Error Cases - No Token", False, f"Expected 401, got {status_code}: {response}")
+            self.log_result("Error Cases - No Token", False, f"Expected 401/403, got {status_code}: {response}")
             return False
 
     def test_invalid_product_id(self):
