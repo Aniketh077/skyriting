@@ -183,7 +183,7 @@ export default function HomeScreen() {
       translateY.value = event.translationY;
     })
     .onEnd((event) => {
-      const threshold = width * 0.3;
+      const threshold = SCREEN_WIDTH * 0.3;
       
       if (Math.abs(event.translationX) > threshold) {
         // Swipe left or right
