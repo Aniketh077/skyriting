@@ -812,6 +812,102 @@ async def get_all_users(current_user: dict = Depends(get_admin_user)):
         "created_at": user.get("created_at")
     } for user in users]
 
+
+# Push Notifications
+class PushTokenRegister(BaseModel):
+    expo_push_token: str
+
+class NotificationSend(BaseModel):
+    title: str
+    body: str
+    user_ids: Optional[List[str]] = None  # None means send to all users
+
+@api_router.post("/notifications/register-token")
+async def register_push_token(token_data: PushTokenRegister, current_user: dict = Depends(get_current_user)):
+    try:
+        await db.users.update_one(
+            {"_id": current_user["_id"]},
+            {"$set": {"expo_push_token": token_data.expo_push_token}}
+        )
+        return {"message": "Push token registered successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.post("/admin/notifications/send")
+async def send_notification(
+    notification: NotificationSend,
+    current_user: dict = Depends(get_admin_user)
+):
+    try:
+        import requests
+        
+        # Get users to send notification to
+        if notification.user_ids:
+            users = await db.users.find(
+                {"_id": {"$in": [ObjectId(uid) for uid in notification.user_ids]}}
+            ).to_list(1000)
+        else:
+            users = await db.users.find().to_list(1000)
+        
+        # Collect expo push tokens
+        push_tokens = [
+            user.get("expo_push_token")
+            for user in users
+            if user.get("expo_push_token")
+        ]
+        
+        if not push_tokens:
+            return {"message": "No users with push tokens found", "sent_count": 0}
+        
+        # Prepare messages for Expo Push API
+        messages = []
+        for token in push_tokens:
+            messages.append({
+                "to": token,
+                "sound": "default",
+                "title": notification.title,
+                "body": notification.body,
+                "data": {"type": "admin_notification"}
+            })
+        
+        # Send to Expo Push API
+        response = requests.post(
+            "https://exp.host/--/api/v2/push/send",
+            json=messages,
+            headers={
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+            }
+        )
+        
+        if response.status_code == 200:
+            return {
+                "message": "Notifications sent successfully",
+                "sent_count": len(push_tokens),
+                "response": response.json()
+            }
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to send notifications: {response.text}"
+            )
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/admin/notifications/stats")
+async def get_notification_stats(current_user: dict = Depends(get_admin_user)):
+    total_users = await db.users.count_documents({})
+    users_with_tokens = await db.users.count_documents({"expo_push_token": {"$exists": True, "$ne": None}})
+    
+    return {
+        "total_users": total_users,
+        "users_with_notifications_enabled": users_with_tokens,
+        "coverage_percentage": round((users_with_tokens / total_users * 100) if total_users > 0 else 0, 2)
+    }
+
 # Include the router in the main app
 app.include_router(api_router)
 
