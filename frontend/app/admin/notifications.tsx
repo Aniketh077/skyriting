@@ -140,8 +140,8 @@ export default function AdminNotificationsScreen() {
           <Text style={styles.label}>Title *</Text>
           <TextInput
             style={styles.input}
-            placeholder=\"Notification title\"
-            placeholderTextColor=\"#666\"
+            placeholder="Notification title"
+            placeholderTextColor="#666"
             value={title}
             onChangeText={setTitle}
           />
@@ -149,8 +149,8 @@ export default function AdminNotificationsScreen() {
           <Text style={styles.label}>Message *</Text>
           <TextInput
             style={[styles.input, styles.textArea]}
-            placeholder=\"Notification message\"
-            placeholderTextColor=\"#666\"
+            placeholder="Notification message"
+            placeholderTextColor="#666"
             value={body}
             onChangeText={setBody}
             multiline
