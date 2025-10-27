@@ -4,8 +4,9 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  ActivityIndicator,
-  ScrollView
+  ScrollView,
+  Image,
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -18,10 +19,12 @@ const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 export default function ProfileScreen() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadProfile();
+    loadOrders();
   }, []);
 
   const loadProfile = async () => {
@@ -45,10 +48,31 @@ export default function ProfileScreen() {
     }
   };
 
+  const loadOrders = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await axios.get(`${API_URL}/api/orders/my-orders`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setOrders(response.data);
+    } catch (error) {
+      console.error('Error loading orders:', error);
+    }
+  };
+
   const handleLogout = async () => {
     await AsyncStorage.removeItem('token');
     await AsyncStorage.removeItem('user');
+    await AsyncStorage.removeItem('cart');
     router.replace('/');
+  };
+
+  const navigateToWishlist = () => {
+    router.push('/wishlist' as any);
+  };
+
+  const navigateToOrders = () => {
+    router.push('/orders' as any);
   };
 
   if (loading) {
@@ -64,7 +88,11 @@ export default function ProfileScreen() {
       <ScrollView>
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
-            <Ionicons name="person" size={48} color="#666" />
+            {user?.profile_photo ? (
+              <Image source={{ uri: user.profile_photo }} style={styles.avatar} />
+            ) : (
+              <Ionicons name="person" size={48} color="#666" />
+            )}
           </View>
           <Text style={styles.name}>{user?.name}</Text>
           <Text style={styles.email}>{user?.email}</Text>
@@ -85,24 +113,65 @@ export default function ProfileScreen() {
             <Text style={styles.statValue}>{user?.following_count || 0}</Text>
             <Text style={styles.statLabel}>Following</Text>
           </View>
+          <View style={styles.stat}>
+            <Text style={styles.statValue}>{orders.length}</Text>
+            <Text style={styles.statLabel}>Orders</Text>
+          </View>
         </View>
 
         <View style={styles.menuContainer}>
-          <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="heart-outline" size={24} color="#fff" />
-            <Text style={styles.menuText}>My Wishlist</Text>
+          <TouchableOpacity style={styles.menuItem} onPress={navigateToWishlist}>
+            <View style={styles.menuIconContainer}>
+              <Ionicons name="heart" size={24} color="#ff4444" />
+            </View>
+            <View style={styles.menuTextContainer}>
+              <Text style={styles.menuText}>My Wishlist</Text>
+              <Text style={styles.menuSubtext}>View saved items</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="#666" />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.menuItem} onPress={navigateToOrders}>
+            <View style={styles.menuIconContainer}>
+              <Ionicons name="receipt" size={24} color="#4CAF50" />
+            </View>
+            <View style={styles.menuTextContainer}>
+              <Text style={styles.menuText}>My Orders</Text>
+              <Text style={styles.menuSubtext}>{orders.length} total orders</Text>
+            </View>
             <Ionicons name="chevron-forward" size={24} color="#666" />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="receipt-outline" size={24} color="#fff" />
-            <Text style={styles.menuText}>My Orders</Text>
+            <View style={styles.menuIconContainer}>
+              <Ionicons name="person-outline" size={24} color="#2196F3" />
+            </View>
+            <View style={styles.menuTextContainer}>
+              <Text style={styles.menuText}>Edit Profile</Text>
+              <Text style={styles.menuSubtext}>Update your information</Text>
+            </View>
             <Ionicons name="chevron-forward" size={24} color="#666" />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem}>
-            <Ionicons name="settings-outline" size={24} color="#fff" />
-            <Text style={styles.menuText}>Settings</Text>
+            <View style={styles.menuIconContainer}>
+              <Ionicons name="settings-outline" size={24} color="#FF9800" />
+            </View>
+            <View style={styles.menuTextContainer}>
+              <Text style={styles.menuText}>Settings</Text>
+              <Text style={styles.menuSubtext}>App preferences</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="#666" />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.menuItem}>
+            <View style={styles.menuIconContainer}>
+              <Ionicons name="help-circle-outline" size={24} color="#9C27B0" />
+            </View>
+            <View style={styles.menuTextContainer}>
+              <Text style={styles.menuText}>Help & Support</Text>
+              <Text style={styles.menuSubtext}>Get assistance</Text>
+            </View>
             <Ionicons name="chevron-forward" size={24} color="#666" />
           </TouchableOpacity>
 
@@ -110,8 +179,13 @@ export default function ProfileScreen() {
             style={[styles.menuItem, styles.logoutItem]}
             onPress={handleLogout}
           >
-            <Ionicons name="log-out-outline" size={24} color="#ff4444" />
-            <Text style={[styles.menuText, styles.logoutText]}>Logout</Text>
+            <View style={styles.menuIconContainer}>
+              <Ionicons name="log-out-outline" size={24} color="#ff4444" />
+            </View>
+            <View style={styles.menuTextContainer}>
+              <Text style={[styles.menuText, styles.logoutText]}>Logout</Text>
+              <Text style={styles.menuSubtext}>Sign out of your account</Text>
+            </View>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -143,6 +217,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
+    borderWidth: 3,
+    borderColor: '#333',
+  },
+  avatar: {
+    width: 90,
+    height: 90,
+    borderRadius: 45,
   },
   name: {
     fontSize: 24,
@@ -193,21 +274,43 @@ const styles = StyleSheet.create({
   },
   menuContainer: {
     marginTop: 24,
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 16,
-    gap: 16,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 12,
+  },
+  menuIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#0a0a0a',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  menuTextContainer: {
+    flex: 1,
   },
   menuText: {
-    flex: 1,
     fontSize: 16,
+    fontWeight: '600',
     color: '#fff',
+  },
+  menuSubtext: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 2,
   },
   logoutItem: {
     marginTop: 16,
+    borderWidth: 1,
+    borderColor: '#ff4444',
   },
   logoutText: {
     color: '#ff4444',
