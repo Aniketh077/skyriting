@@ -20,16 +20,12 @@ load_dotenv(ROOT_DIR / '.env')
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
-# Create custom SSL context to bypass OpenSSL 3.0 strict validation
-ssl_context = ssl.create_default_context()
-ssl_context.check_hostname = False
-ssl_context.verify_mode = ssl.CERT_NONE
-
 client = AsyncIOMotorClient(
     mongo_url,
-    ssl_context=ssl_context,
-    serverSelectionTimeoutMS=5000,
-    connectTimeoutMS=10000
+    tls=True,
+    tlsAllowInvalidCertificates=True,
+    serverSelectionTimeoutMS=10000,
+    connectTimeoutMS=15000
 )
 db = client[os.environ['DB_NAME']]
 
