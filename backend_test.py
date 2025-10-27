@@ -1152,6 +1152,14 @@ class SkyratingAPITester:
         self.test_admin_enhanced_users_management()
         print()
 
+        # HIGH PRIORITY - Push Notifications APIs (NEW)
+        print("🔔 HIGH: PUSH NOTIFICATIONS TESTS")
+        print("-" * 30)
+        self.test_push_notifications_register_token()
+        self.test_push_notifications_stats()
+        self.test_push_notifications_send()
+        print()
+
         # NEW FEATURES TESTS (PRODUCTION)
         print("🚀 PRODUCTION: NEW FEATURES TESTS")
         print("-" * 30)
