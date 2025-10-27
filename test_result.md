@@ -228,15 +228,18 @@ backend:
 
   - task: "Admin Users Management Enhanced APIs"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
         - working: "NA"
           agent: "main"
           comment: "Enhanced existing admin/users endpoint to include is_banned, followers_count, following_count. Added new endpoints: PUT /api/admin/unban-user/{user_id}, PUT /api/admin/unverify-influencer/{user_id} to toggle user status."
+        - working: true
+          agent: "testing"
+          comment: "✅ All Enhanced Admin Users Management APIs working perfectly: GET /api/admin/users returns users with new fields (is_banned, followers_count, following_count), PUT /api/admin/unverify-influencer/{user_id} successfully removes influencer status (sets is_verified=False, role=user), PUT /api/admin/unban-user/{user_id} successfully unbans users (sets is_banned=False). All endpoints properly handle invalid user IDs (400 status) and enforce admin-only access (403 without token). Complete test flow verified: verify→unverify influencer, ban→unban user with status validation after each operation."
 
 frontend:
   - task: "Splash Screen & Navigation"
