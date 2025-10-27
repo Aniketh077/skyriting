@@ -607,6 +607,170 @@ class SkyratingAPITester:
             self.log_result("Admin - List Users", False, f"Status: {status_code}, Response: {response}")
             return False
 
+    def test_admin_enhanced_users_management(self):
+        """Test enhanced admin users management APIs with new fields and endpoints"""
+        if not self.admin_token:
+            self.log_result("Admin Enhanced Users - Setup", False, "No admin token available")
+            return False
+        
+        print("\n🔧 TESTING ENHANCED ADMIN USERS MANAGEMENT APIs")
+        print("-" * 50)
+        
+        # Step 1: Test enhanced GET /admin/users with new fields
+        success, users_response, status_code = self.make_request("GET", "/admin/users", token=self.admin_token)
+        
+        if not success or not isinstance(users_response, list):
+            self.log_result("Enhanced GET /admin/users", False, f"Status: {status_code}, Response: {users_response}")
+            return False
+        
+        if len(users_response) == 0:
+            self.log_result("Enhanced GET /admin/users", False, "No users found")
+            return False
+        
+        # Check for new fields in user response
+        sample_user = users_response[0]
+        required_fields = ["id", "name", "email", "role", "is_verified", "is_banned", "followers_count", "following_count"]
+        missing_fields = [field for field in required_fields if field not in sample_user]
+        
+        if missing_fields:
+            self.log_result("Enhanced GET /admin/users - New Fields", False, f"Missing fields: {missing_fields}")
+            return False
+        
+        # Verify field types
+        field_type_errors = []
+        if not isinstance(sample_user.get("is_banned"), bool):
+            field_type_errors.append("is_banned should be boolean")
+        if not isinstance(sample_user.get("followers_count"), int):
+            field_type_errors.append("followers_count should be integer")
+        if not isinstance(sample_user.get("following_count"), int):
+            field_type_errors.append("following_count should be integer")
+        
+        if field_type_errors:
+            self.log_result("Enhanced GET /admin/users - Field Types", False, f"Type errors: {field_type_errors}")
+            return False
+        
+        self.log_result("Enhanced GET /admin/users", True, 
+                       f"Retrieved {len(users_response)} users with new fields: is_banned, followers_count, following_count")
+        
+        # Find a regular user for testing (not admin)
+        test_user = None
+        for user in users_response:
+            if user.get("role") != "admin":
+                test_user = user
+                break
+        
+        if not test_user:
+            self.log_result("Enhanced Users Management", False, "No regular user found for testing")
+            return False
+        
+        test_user_id = test_user["id"]
+        print(f"   Using test user: {test_user['name']} (ID: {test_user_id})")
+        
+        # Step 2: Test verify influencer
+        success, response, status_code = self.make_request("PUT", f"/admin/verify-influencer/{test_user_id}", token=self.admin_token)
+        
+        if success and "message" in response:
+            self.log_result("PUT /admin/verify-influencer", True, f"User {test_user_id} verified as influencer")
+            
+            # Verify the change
+            success_check, users_check, _ = self.make_request("GET", "/admin/users", token=self.admin_token)
+            if success_check:
+                updated_user = next((u for u in users_check if u["id"] == test_user_id), None)
+                if updated_user and updated_user.get("role") == "influencer" and updated_user.get("is_verified") == True:
+                    self.log_result("Verify Influencer Status Check", True, "User role and verification updated correctly")
+                else:
+                    self.log_result("Verify Influencer Status Check", False, f"Expected role=influencer, is_verified=True, got role={updated_user.get('role')}, is_verified={updated_user.get('is_verified')}")
+        else:
+            self.log_result("PUT /admin/verify-influencer", False, f"Status: {status_code}, Response: {response}")
+            return False
+        
+        # Step 3: Test NEW unverify influencer endpoint
+        success, response, status_code = self.make_request("PUT", f"/admin/unverify-influencer/{test_user_id}", token=self.admin_token)
+        
+        if success and "message" in response:
+            self.log_result("PUT /admin/unverify-influencer", True, f"Influencer status removed from user {test_user_id}")
+            
+            # Verify the change
+            success_check, users_check, _ = self.make_request("GET", "/admin/users", token=self.admin_token)
+            if success_check:
+                updated_user = next((u for u in users_check if u["id"] == test_user_id), None)
+                if updated_user and updated_user.get("role") == "user" and updated_user.get("is_verified") == False:
+                    self.log_result("Unverify Influencer Status Check", True, "User role and verification reverted correctly")
+                else:
+                    self.log_result("Unverify Influencer Status Check", False, f"Expected role=user, is_verified=False, got role={updated_user.get('role')}, is_verified={updated_user.get('is_verified')}")
+        else:
+            self.log_result("PUT /admin/unverify-influencer", False, f"Status: {status_code}, Response: {response}")
+            return False
+        
+        # Step 4: Test ban user
+        success, response, status_code = self.make_request("PUT", f"/admin/ban-user/{test_user_id}", token=self.admin_token)
+        
+        if success and "message" in response:
+            self.log_result("PUT /admin/ban-user", True, f"User {test_user_id} banned successfully")
+            
+            # Verify the change
+            success_check, users_check, _ = self.make_request("GET", "/admin/users", token=self.admin_token)
+            if success_check:
+                updated_user = next((u for u in users_check if u["id"] == test_user_id), None)
+                if updated_user and updated_user.get("is_banned") == True:
+                    self.log_result("Ban User Status Check", True, "User banned status updated correctly")
+                else:
+                    self.log_result("Ban User Status Check", False, f"Expected is_banned=True, got is_banned={updated_user.get('is_banned')}")
+        else:
+            self.log_result("PUT /admin/ban-user", False, f"Status: {status_code}, Response: {response}")
+            return False
+        
+        # Step 5: Test NEW unban user endpoint
+        success, response, status_code = self.make_request("PUT", f"/admin/unban-user/{test_user_id}", token=self.admin_token)
+        
+        if success and "message" in response:
+            self.log_result("PUT /admin/unban-user", True, f"User {test_user_id} unbanned successfully")
+            
+            # Verify the change
+            success_check, users_check, _ = self.make_request("GET", "/admin/users", token=self.admin_token)
+            if success_check:
+                updated_user = next((u for u in users_check if u["id"] == test_user_id), None)
+                if updated_user and updated_user.get("is_banned") == False:
+                    self.log_result("Unban User Status Check", True, "User banned status reverted correctly")
+                else:
+                    self.log_result("Unban User Status Check", False, f"Expected is_banned=False, got is_banned={updated_user.get('is_banned')}")
+        else:
+            self.log_result("PUT /admin/unban-user", False, f"Status: {status_code}, Response: {response}")
+            return False
+        
+        # Step 6: Test error handling with invalid user ID
+        invalid_user_id = "invalid_user_id_12345"
+        
+        # Test unban with invalid ID
+        success, response, status_code = self.make_request("PUT", f"/admin/unban-user/{invalid_user_id}", token=self.admin_token)
+        if not success and status_code in [400, 404]:
+            self.log_result("Error Handling - Unban Invalid ID", True, f"Properly handled invalid user ID with status {status_code}")
+        else:
+            self.log_result("Error Handling - Unban Invalid ID", False, f"Expected 400/404, got {status_code}")
+        
+        # Test unverify with invalid ID
+        success, response, status_code = self.make_request("PUT", f"/admin/unverify-influencer/{invalid_user_id}", token=self.admin_token)
+        if not success and status_code in [400, 404]:
+            self.log_result("Error Handling - Unverify Invalid ID", True, f"Properly handled invalid user ID with status {status_code}")
+        else:
+            self.log_result("Error Handling - Unverify Invalid ID", False, f"Expected 400/404, got {status_code}")
+        
+        # Step 7: Test admin access control (without token)
+        success, response, status_code = self.make_request("PUT", f"/admin/unban-user/{test_user_id}")
+        if not success and status_code in [401, 403]:
+            self.log_result("Access Control - Unban No Token", True, f"Properly blocked unauthorized access with status {status_code}")
+        else:
+            self.log_result("Access Control - Unban No Token", False, f"Expected 401/403, got {status_code}")
+        
+        success, response, status_code = self.make_request("PUT", f"/admin/unverify-influencer/{test_user_id}")
+        if not success and status_code in [401, 403]:
+            self.log_result("Access Control - Unverify No Token", True, f"Properly blocked unauthorized access with status {status_code}")
+        else:
+            self.log_result("Access Control - Unverify No Token", False, f"Expected 401/403, got {status_code}")
+        
+        print("   ✅ Enhanced Admin Users Management APIs testing completed")
+        return True
+
     # ==================== NEW FEATURES TESTS (PRODUCTION) ====================
     
     def test_razorpay_payment_integration(self):
