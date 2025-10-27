@@ -286,6 +286,19 @@ frontend:
           agent: "main"
           comment: "Created profile screen with user info, stats, and logout"
 
+
+  - task: "Admin Users Management Screen"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/app/admin/users.tsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Created comprehensive users management screen with search, filters (all/users/influencers/banned), and actions to verify/unverify influencer status and ban/unban users. Includes responsive design and pull-to-refresh."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
