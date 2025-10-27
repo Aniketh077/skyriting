@@ -806,6 +806,9 @@ async def get_all_users(current_user: dict = Depends(get_admin_user)):
         "email": user["email"],
         "role": user.get("role", "user"),
         "is_verified": user.get("is_verified", False),
+        "is_banned": user.get("is_banned", False),
+        "followers_count": len(user.get("followers", [])),
+        "following_count": len(user.get("following", [])),
         "created_at": user.get("created_at")
     } for user in users]
 
