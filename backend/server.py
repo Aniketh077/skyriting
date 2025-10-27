@@ -762,6 +762,41 @@ async def ban_user(user_id: str, current_user: dict = Depends(get_admin_user)):
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid user ID")
 
+
+@api_router.put("/admin/unban-user/{user_id}")
+async def unban_user(user_id: str, current_user: dict = Depends(get_admin_user)):
+    try:
+        result = await db.users.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": {"is_banned": False}}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        return {"message": "User unbanned successfully"}
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid user ID")
+
+@api_router.put("/admin/unverify-influencer/{user_id}")
+async def unverify_influencer(user_id: str, current_user: dict = Depends(get_admin_user)):
+    try:
+        result = await db.users.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": {"is_verified": False, "role": "user"}}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        return {"message": "Influencer status removed"}
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid user ID")
+
 @api_router.get("/admin/users")
 async def get_all_users(current_user: dict = Depends(get_admin_user)):
     users = await db.users.find().to_list(1000)
