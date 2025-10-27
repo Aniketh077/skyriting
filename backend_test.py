@@ -207,7 +207,7 @@ class SkyratingAPITester:
         brand_id = self.test_brand_id if self.test_brand_id else "68ff1c7dd02e0fe94ba3a09d"
         
         data = {
-            "brand_id": self.test_brand_id,
+            "brand_id": brand_id,
             "name": "Test Product",
             "description": "A test product for API testing",
             "price": 99.99,
