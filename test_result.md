@@ -241,6 +241,21 @@ backend:
           agent: "testing"
           comment: "✅ All Enhanced Admin Users Management APIs working perfectly: GET /api/admin/users returns users with new fields (is_banned, followers_count, following_count), PUT /api/admin/unverify-influencer/{user_id} successfully removes influencer status (sets is_verified=False, role=user), PUT /api/admin/unban-user/{user_id} successfully unbans users (sets is_banned=False). All endpoints properly handle invalid user IDs (400 status) and enforce admin-only access (403 without token). Complete test flow verified: verify→unverify influencer, ban→unban user with status validation after each operation."
 
+  - task: "Push Notifications Backend APIs"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+          agent: "main"
+          comment: "Implemented push notification system with three new endpoints: POST /api/notifications/register-token (register user push tokens), POST /api/admin/notifications/send (admin sends notifications to all users), GET /api/admin/notifications/stats (get notification statistics). Integrated with Expo Push API for real notification delivery."
+        - working: true
+          agent: "testing"
+          comment: "✅ All Push Notification APIs working perfectly: POST /api/notifications/register-token successfully registers Expo push tokens for users, GET /api/admin/notifications/stats returns proper statistics (11 total users, 1 with tokens, 9.09% coverage), POST /api/admin/notifications/send successfully sends notifications to users with registered tokens (sent to 1 user). All endpoints properly enforce authentication (user token for registration, admin token for stats/send). Integration with Expo Push API working correctly."
+
 frontend:
   - task: "Splash Screen & Navigation"
     implemented: true
