@@ -555,6 +555,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     position: 'relative',
   },
+  cardTouchable: {
+    width: '100%',
+    height: '80%',
+  },
   productImage: {
     width: '100%',
     height: '80%',
