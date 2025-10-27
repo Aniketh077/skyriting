@@ -8,7 +8,9 @@ import {
   Image,
   TouchableOpacity,
   Alert,
-  ScrollView
+  ScrollView,
+  Share,
+  Platform
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,8 +25,20 @@ import Animated, {
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const { width, height } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
+
+// Responsive breakpoints
+const isSmallDevice = SCREEN_WIDTH < 375;
+const isMediumDevice = SCREEN_WIDTH >= 375 && SCREEN_WIDTH < 768;
+const isLargeDevice = SCREEN_WIDTH >= 768;
+
+// Responsive values
+const getResponsiveValue = (small: number, medium: number, large: number) => {
+  if (isSmallDevice) return small;
+  if (isMediumDevice) return medium;
+  return large;
+};
 
 export default function HomeScreen() {
   const router = useRouter();
