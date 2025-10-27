@@ -5,8 +5,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Image,
-  ActivityIndicator
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -24,47 +24,63 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     loadProfile();
-    loadOrders();
   }, []);
 
   const loadProfile = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
+      console.log('Token:', token ? 'exists' : 'missing');
+      
       if (!token) {
+        console.log('No token, redirecting to login');
         router.replace('/auth/login');
         return;
       }
 
+      console.log('Fetching profile from:', `${API_URL}/api/auth/me`);
       const response = await axios.get(`${API_URL}/api/auth/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
+      console.log('Profile data:', response.data);
       setUser(response.data);
-    } catch (error) {
+      
+      // Load orders
+      try {
+        const ordersRes = await axios.get(`${API_URL}/api/orders/my-orders`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setOrders(ordersRes.data);
+      } catch (err) {
+        console.error('Error loading orders:', err);
+      }
+    } catch (error: any) {
       console.error('Error loading profile:', error);
-      router.replace('/auth/login');
+      console.error('Error response:', error.response?.data);
+      
+      // If unauthorized, clear storage and redirect
+      if (error.response?.status === 401) {
+        await AsyncStorage.removeItem('token');
+        await AsyncStorage.removeItem('user');
+        Alert.alert('Session Expired', 'Please login again');
+        router.replace('/auth/login');
+      } else {
+        Alert.alert('Error', 'Failed to load profile');
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const loadOrders = async () => {
-    try {
-      const token = await AsyncStorage.getItem('token');
-      const response = await axios.get(`${API_URL}/api/orders/my-orders`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setOrders(response.data);
-    } catch (error) {
-      console.error('Error loading orders:', error);
-    }
-  };
-
   const handleLogout = async () => {
-    await AsyncStorage.removeItem('token');
-    await AsyncStorage.removeItem('user');
-    await AsyncStorage.removeItem('cart');
-    router.replace('/');
+    try {
+      await AsyncStorage.removeItem('token');
+      await AsyncStorage.removeItem('user');
+      await AsyncStorage.removeItem('cart');
+      router.replace('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const navigateToWishlist = () => {
@@ -83,19 +99,26 @@ export default function ProfileScreen() {
     );
   }
 
+  if (!user) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.errorText}>Failed to load profile</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={loadProfile}>
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
-            {user?.profile_photo ? (
-              <Image source={{ uri: user.profile_photo }} style={styles.avatar} />
-            ) : (
-              <Ionicons name="person" size={48} color="#666" />
-            )}
+            <Ionicons name="person" size={48} color="#666" />
           </View>
-          <Text style={styles.name}>{user?.name}</Text>
-          <Text style={styles.email}>{user?.email}</Text>
+          <Text style={styles.name}>{user?.name || 'User'}</Text>
+          <Text style={styles.email}>{user?.email || ''}</Text>
           {user?.is_verified && (
             <View style={styles.verifiedBadge}>
               <Ionicons name="checkmark-circle" size={20} color="#4CAF50" />
@@ -204,6 +227,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#000',
   },
+  errorText: {
+    color: '#fff',
+    fontSize: 16,
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   header: {
     alignItems: 'center',
     paddingVertical: 32,
@@ -219,11 +258,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderWidth: 3,
     borderColor: '#333',
-  },
-  avatar: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
   },
   name: {
     fontSize: 24,

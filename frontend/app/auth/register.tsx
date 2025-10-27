@@ -37,26 +37,34 @@ export default function RegisterScreen() {
     }
 
     setLoading(true);
+    console.log('Attempting registration:', { email, name });
+    console.log('API URL:', API_URL);
+    
     try {
       const response = await axios.post(`${API_URL}/api/auth/register`, {
-        email,
+        email: email.trim(),
         password,
-        name
+        name: name.trim()
       });
 
+      console.log('Register response:', response.data);
       const { token, user } = response.data;
       
       // Store token and user data
       await AsyncStorage.setItem('token', token);
       await AsyncStorage.setItem('user', JSON.stringify(user));
+      
+      console.log('Token stored, navigating...');
 
       // Navigate to main app
-      router.replace('/(tabs)');
+      router.replace('/(tabs)/home');
+      Alert.alert('Success', 'Account created successfully!');
     } catch (error: any) {
       console.error('Registration error:', error);
+      console.error('Error response:', error.response?.data);
       Alert.alert(
         'Registration Failed',
-        error.response?.data?.detail || 'Something went wrong'
+        error.response?.data?.detail || 'Something went wrong. Please try again.'
       );
     } finally {
       setLoading(false);
@@ -109,7 +117,7 @@ export default function RegisterScreen() {
             <Text style={styles.label}>Password</Text>
             <TextInput
               style={styles.input}
-              placeholder="Create a password"
+              placeholder="Create a password (min 6 characters)"
               placeholderTextColor="#666"
               value={password}
               onChangeText={setPassword}

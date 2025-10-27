@@ -31,29 +31,38 @@ export default function LoginScreen() {
     }
 
     setLoading(true);
+    console.log('Attempting login with:', email);
+    console.log('API URL:', API_URL);
+    
     try {
       const response = await axios.post(`${API_URL}/api/auth/login`, {
-        email,
+        email: email.trim(),
         password
       });
 
+      console.log('Login response:', response.data);
       const { token, user } = response.data;
       
       // Store token and user data
       await AsyncStorage.setItem('token', token);
       await AsyncStorage.setItem('user', JSON.stringify(user));
+      
+      console.log('Token stored, navigating...');
 
       // Navigate based on role
       if (user.role === 'admin') {
-        router.replace('/admin/dashboard');
+        router.replace('/(tabs)/home');
       } else {
-        router.replace('/(tabs)');
+        router.replace('/(tabs)/home');
       }
+      
+      Alert.alert('Success', 'Login successful!');
     } catch (error: any) {
       console.error('Login error:', error);
+      console.error('Error response:', error.response?.data);
       Alert.alert(
         'Login Failed',
-        error.response?.data?.detail || 'Invalid credentials'
+        error.response?.data?.detail || 'Invalid credentials. Please try again.'
       );
     } finally {
       setLoading(false);
