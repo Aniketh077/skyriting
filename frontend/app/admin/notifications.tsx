@@ -101,7 +101,7 @@ export default function AdminNotificationsScreen() {
           headerShown: true,
           headerLeft: () => (
             <TouchableOpacity onPress={() => router.back()}>
-              <Ionicons name=\"arrow-back\" size={24} color=\"#fff\" />
+              <Ionicons name="arrow-back" size={24} color="#fff" />
             </TouchableOpacity>
           )
         }}
