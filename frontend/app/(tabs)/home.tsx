@@ -461,7 +461,7 @@ export default function HomeScreen() {
                 <View style={styles.productHeader}>
                   <View style={styles.productDetails}>
                     <Text style={styles.productName}>{currentProduct.name}</Text>
-                    <Text style={styles.productPrice}>${currentProduct.price}</Text>
+                    <Text style={styles.productPrice}>{formatINR(currentProduct.price)}</Text>
                   </View>
                   <TouchableOpacity 
                     style={styles.buyNowButton}
