@@ -207,7 +207,7 @@ export default function HomeScreen() {
     });
 
   const animatedStyle = useAnimatedStyle(() => {
-    const rotateZ = (translateX.value / width) * 25; // Rotation effect
+    const rotateZ = (translateX.value / SCREEN_WIDTH) * 25; // Rotation effect
     
     return {
       transform: [
