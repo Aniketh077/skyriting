@@ -3,18 +3,21 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
+  FlatList,
   TouchableOpacity,
   Image,
   Alert,
-  ActivityIndicator,
-  TextInput
+  TextInput,
+  Dimensions
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
+import { formatINR } from '../../utils/currency';
 
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 interface CartItem {
@@ -23,20 +26,15 @@ interface CartItem {
   price: number;
   quantity: number;
   image?: string;
-  size?: string;
-  color?: string;
 }
 
 export default function CartScreen() {
+  const router = useRouter();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [address, setAddress] = useState({
-    street: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    phone: ''
-  });
+  const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [pincode, setPincode] = useState('');
 
   useEffect(() => {
     loadCart();
@@ -44,26 +42,31 @@ export default function CartScreen() {
 
   const loadCart = async () => {
     try {
-      const savedCart = await AsyncStorage.getItem('cart');
-      if (savedCart) {
-        setCartItems(JSON.parse(savedCart));
+      const cart = await AsyncStorage.getItem('cart');
+      if (cart) {
+        setCartItems(JSON.parse(cart));
       }
     } catch (error) {
       console.error('Error loading cart:', error);
     }
   };
 
-  const updateQuantity = async (index: number, delta: number) => {
-    const newCart = [...cartItems];
-    newCart[index].quantity = Math.max(1, newCart[index].quantity + delta);
-    setCartItems(newCart);
-    await AsyncStorage.setItem('cart', JSON.stringify(newCart));
+  const updateQuantity = async (productId: string, change: number) => {
+    const updated = cartItems.map(item => {
+      if (item.product_id === productId) {
+        const newQuantity = Math.max(1, item.quantity + change);
+        return { ...item, quantity: newQuantity };
+      }
+      return item;
+    });
+    setCartItems(updated);
+    await AsyncStorage.setItem('cart', JSON.stringify(updated));
   };
 
-  const removeItem = async (index: number) => {
-    const newCart = cartItems.filter((_, i) => i !== index);
-    setCartItems(newCart);
-    await AsyncStorage.setItem('cart', JSON.stringify(newCart));
+  const removeItem = async (productId: string) => {
+    const updated = cartItems.filter(item => item.product_id !== productId);
+    setCartItems(updated);
+    await AsyncStorage.setItem('cart', JSON.stringify(updated));
   };
 
   const getTotalPrice = () => {
@@ -71,45 +74,50 @@ export default function CartScreen() {
   };
 
   const handleCheckout = async () => {
-    if (!address.street || !address.city || !address.phone) {
-      Alert.alert('Error', 'Please fill in all address fields');
+    if (!address || !city || !pincode) {
+      Alert.alert('Missing Information', 'Please fill in all shipping details');
       return;
     }
 
     if (cartItems.length === 0) {
-      Alert.alert('Error', 'Your cart is empty');
+      Alert.alert('Empty Cart', 'Please add items to cart first');
       return;
     }
 
     setLoading(true);
     try {
       const token = await AsyncStorage.getItem('token');
-      const orderItems = cartItems.map(item => ({
-        product_id: item.product_id,
-        quantity: item.quantity,
-        price: item.price
-      }));
+      if (!token) {
+        Alert.alert('Error', 'Please login to continue');
+        router.push('/auth/login');
+        return;
+      }
+
+      const orderData = {
+        items: cartItems.map(item => ({
+          product_id: item.product_id,
+          quantity: item.quantity,
+          price: item.price
+        })),
+        total_amount: getTotalPrice(),
+        shipping_address: {
+          street: address,
+          city: city,
+          pincode: pincode
+        },
+        payment_method: 'razorpay'
+      };
 
       const response = await axios.post(
-        `${API_URL}/api/orders`,
-        {
-          items: orderItems,
-          total_amount: getTotalPrice(),
-          shipping_address: address,
-          payment_method: 'mock'
-        },
+        `${API_URL}/api/orders/create-payment`,
+        orderData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      Alert.alert('Success', 'Order placed successfully!', [
-        {
-          text: 'OK',
-          onPress: async () => {
-            setCartItems([]);
-            await AsyncStorage.removeItem('cart');
-          }
-        }
-      ]);
+      Alert.alert('Success', 'Order placed successfully!');
+      await AsyncStorage.removeItem('cart');
+      setCartItems([]);
+      router.push('/orders');
     } catch (error: any) {
       console.error('Checkout error:', error);
       Alert.alert('Error', error.response?.data?.detail || 'Failed to place order');
@@ -118,128 +126,117 @@ export default function CartScreen() {
     }
   };
 
-  if (cartItems.length === 0) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Shopping Cart</Text>
+  const renderItem = ({ item }: { item: CartItem }) => (
+    <View style={styles.cartItem}>
+      {item.image ? (
+        <Image source={{ uri: item.image }} style={styles.itemImage} />
+      ) : (
+        <View style={[styles.itemImage, styles.placeholderImage]}>
+          <Ionicons name="shirt-outline" size={32} color="#666" />
         </View>
-        <View style={styles.emptyContainer}>
-          <Ionicons name="cart-outline" size={80} color="#333" />
-          <Text style={styles.emptyText}>Your cart is empty</Text>
-          <Text style={styles.emptySubtext}>Add items to get started</Text>
+      )}
+      
+      <View style={styles.itemDetails}>
+        <Text style={styles.itemName}>{item.name}</Text>
+        <Text style={styles.itemPrice}>{formatINR(item.price)}</Text>
+        
+        <View style={styles.quantityContainer}>
+          <TouchableOpacity
+            style={styles.quantityButton}
+            onPress={() => updateQuantity(item.product_id, -1)}
+          >
+            <Ionicons name="remove" size={20} color="#000" />
+          </TouchableOpacity>
+          <Text style={styles.quantity}>{item.quantity}</Text>
+          <TouchableOpacity
+            style={styles.quantityButton}
+            onPress={() => updateQuantity(item.product_id, 1)}
+          >
+            <Ionicons name="add" size={20} color="#000" />
+          </TouchableOpacity>
         </View>
-      </SafeAreaView>
-    );
-  }
+      </View>
+
+      <TouchableOpacity
+        style={styles.removeButton}
+        onPress={() => removeItem(item.product_id)}
+      >
+        <Ionicons name="trash-outline" size={24} color="#ff4444" />
+      </TouchableOpacity>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Shopping Cart</Text>
-        <Text style={styles.itemCount}>{cartItems.length} items</Text>
+        <Text style={styles.headerTitle}>Cart ({cartItems.length})</Text>
       </View>
 
-      <ScrollView style={styles.content}>
-        {cartItems.map((item, index) => (
-          <View key={index} style={styles.cartItem}>
-            {item.image ? (
-              <Image source={{ uri: item.image }} style={styles.itemImage} />
-            ) : (
-              <View style={styles.itemImagePlaceholder}>
-                <Ionicons name="shirt-outline" size={32} color="#333" />
-              </View>
-            )}
-            <View style={styles.itemDetails}>
-              <Text style={styles.itemName}>{item.name}</Text>
-              <Text style={styles.itemPrice}>${item.price}</Text>
-              {item.size && <Text style={styles.itemMeta}>Size: {item.size}</Text>}
-              {item.color && <Text style={styles.itemMeta}>Color: {item.color}</Text>}
-            </View>
-            <View style={styles.quantityContainer}>
-              <TouchableOpacity 
-                style={styles.quantityButton}
-                onPress={() => updateQuantity(index, -1)}
-              >
-                <Ionicons name="remove" size={16} color="#fff" />
-              </TouchableOpacity>
-              <Text style={styles.quantity}>{item.quantity}</Text>
-              <TouchableOpacity 
-                style={styles.quantityButton}
-                onPress={() => updateQuantity(index, 1)}
-              >
-                <Ionicons name="add" size={16} color="#fff" />
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity 
-              style={styles.removeButton}
-              onPress={() => removeItem(index)}
+      <FlatList
+        data={cartItems}
+        renderItem={renderItem}
+        keyExtractor={item => item.product_id}
+        contentContainerStyle={styles.listContainer}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Ionicons name="cart-outline" size={80} color="#666" />
+            <Text style={styles.emptyText}>Your cart is empty</Text>
+            <TouchableOpacity
+              style={styles.shopButton}
+              onPress={() => router.push('/(tabs)/home')}
             >
-              <Ionicons name="trash-outline" size={20} color="#ff4444" />
+              <Text style={styles.shopButtonText}>Start Shopping</Text>
             </TouchableOpacity>
           </View>
-        ))}
+        }
+      />
 
-        <View style={styles.addressSection}>
-          <Text style={styles.sectionTitle}>Shipping Address</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Street Address"
-            placeholderTextColor="#666"
-            value={address.street}
-            onChangeText={(text) => setAddress({...address, street: text})}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="City"
-            placeholderTextColor="#666"
-            value={address.city}
-            onChangeText={(text) => setAddress({...address, city: text})}
-          />
-          <View style={styles.row}>
+      {cartItems.length > 0 && (
+        <View style={styles.checkoutContainer}>
+          <View style={styles.addressSection}>
+            <Text style={styles.sectionTitle}>Shipping Address</Text>
             <TextInput
-              style={[styles.input, styles.halfInput]}
-              placeholder="State"
+              style={styles.input}
+              placeholder="Street Address"
               placeholderTextColor="#666"
-              value={address.state}
-              onChangeText={(text) => setAddress({...address, state: text})}
+              value={address}
+              onChangeText={setAddress}
             />
-            <TextInput
-              style={[styles.input, styles.halfInput]}
-              placeholder="Zip Code"
-              placeholderTextColor="#666"
-              value={address.zipCode}
-              onChangeText={(text) => setAddress({...address, zipCode: text})}
-            />
+            <View style={styles.row}>
+              <TextInput
+                style={[styles.input, styles.halfInput]}
+                placeholder="City"
+                placeholderTextColor="#666"
+                value={city}
+                onChangeText={setCity}
+              />
+              <TextInput
+                style={[styles.input, styles.halfInput]}
+                placeholder="Pincode"
+                placeholderTextColor="#666"
+                keyboardType="numeric"
+                value={pincode}
+                onChangeText={setPincode}
+              />
+            </View>
           </View>
-          <TextInput
-            style={styles.input}
-            placeholder="Phone Number"
-            placeholderTextColor="#666"
-            keyboardType="phone-pad"
-            value={address.phone}
-            onChangeText={(text) => setAddress({...address, phone: text})}
-          />
-        </View>
-      </ScrollView>
 
-      <View style={styles.footer}>
-        <View style={styles.totalContainer}>
-          <Text style={styles.totalLabel}>Total</Text>
-          <Text style={styles.totalAmount}>${getTotalPrice().toFixed(2)}</Text>
+          <View style={styles.totalContainer}>
+            <Text style={styles.totalLabel}>Total:</Text>
+            <Text style={styles.totalAmount}>{formatINR(getTotalPrice())}</Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.checkoutButton}
+            onPress={handleCheckout}
+            disabled={loading}
+          >
+            <Text style={styles.checkoutButtonText}>
+              {loading ? 'Processing...' : 'Place Order'}
+            </Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity 
-          style={[styles.checkoutButton, loading && styles.disabledButton]}
-          onPress={handleCheckout}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#000" />
-          ) : (
-            <Text style={styles.checkoutButtonText}>Place Order</Text>
-          )}
-        </TouchableOpacity>
-      </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -250,60 +247,33 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
   },
   header: {
-    paddingHorizontal: 24,
-    paddingVertical: 16,
+    padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#222',
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
   },
-  itemCount: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 4,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 32,
-  },
-  emptyText: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#fff',
-    marginTop: 16,
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 8,
-  },
-  content: {
-    flex: 1,
+  listContainer: {
+    padding: 16,
   },
   cartItem: {
     flexDirection: 'row',
-    padding: 16,
-    marginHorizontal: 16,
-    marginTop: 16,
     backgroundColor: '#1a1a1a',
     borderRadius: 12,
+    padding: 12,
+    marginBottom: 12,
     alignItems: 'center',
   },
   itemImage: {
     width: 80,
     height: 80,
     borderRadius: 8,
-  },
-  itemImagePlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
     backgroundColor: '#0a0a0a',
+  },
+  placeholderImage: {
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -321,22 +291,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     color: '#4CAF50',
-    marginBottom: 4,
-  },
-  itemMeta: {
-    fontSize: 12,
-    color: '#888',
+    marginBottom: 8,
   },
   quantityContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 12,
   },
   quantityButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#333',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -344,31 +310,57 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#fff',
-    minWidth: 24,
+    minWidth: 30,
     textAlign: 'center',
   },
   removeButton: {
     padding: 8,
-    marginLeft: 8,
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 100,
+  },
+  emptyText: {
+    fontSize: 18,
+    color: '#666',
+    marginTop: 16,
+    marginBottom: 24,
+  },
+  shopButton: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: 8,
+  },
+  shopButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  checkoutContainer: {
+    backgroundColor: '#1a1a1a',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#222',
   },
   addressSection: {
-    padding: 16,
-    marginTop: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
     marginBottom: 16,
   },
-  input: {
-    backgroundColor: '#1a1a1a',
-    borderRadius: 12,
-    padding: 16,
+  sectionTitle: {
     fontSize: 16,
+    fontWeight: '600',
     color: '#fff',
+    marginBottom: 12,
+  },
+  input: {
+    backgroundColor: '#0a0a0a',
     borderWidth: 1,
     borderColor: '#333',
+    borderRadius: 8,
+    padding: 12,
+    color: '#fff',
+    fontSize: 15,
     marginBottom: 12,
   },
   row: {
@@ -378,11 +370,6 @@ const styles = StyleSheet.create({
   halfInput: {
     flex: 1,
   },
-  footer: {
-    padding: 24,
-    borderTopWidth: 1,
-    borderTopColor: '#222',
-  },
   totalContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -390,27 +377,24 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   totalLabel: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '600',
     color: '#fff',
   },
   totalAmount: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#4CAF50',
   },
   checkoutButton: {
     backgroundColor: '#fff',
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 8,
     alignItems: 'center',
-  },
-  disabledButton: {
-    opacity: 0.6,
   },
   checkoutButtonText: {
     color: '#000',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
   },
 });
