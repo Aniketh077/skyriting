@@ -231,12 +231,15 @@ class SkyratingAPITester:
 
     def test_products_create_user_forbidden(self):
         """Test create product as regular user (should fail)"""
-        if not self.user_token or not self.test_brand_id:
-            self.log_result("Products - Create (User Forbidden)", False, "No user token or brand ID available")
+        if not self.user_token:
+            self.log_result("Products - Create (User Forbidden)", False, "No user token available")
             return False
         
+        # Use the brand ID we got from brands list, or create a fallback
+        brand_id = self.test_brand_id if self.test_brand_id else "68ff1c7dd02e0fe94ba3a09d"
+        
         data = {
-            "brand_id": self.test_brand_id,
+            "brand_id": brand_id,
             "name": "Unauthorized Product",
             "description": "This should fail",
             "price": 50.0,
