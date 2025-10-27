@@ -275,7 +275,7 @@ export default function HomeScreen() {
 
       <View style={styles.progressContainer}>
         <Text style={styles.progressText}>
-          {currentIndex + 1} / {products.length}
+          {currentIndex + 1} / {filteredProducts.length}
         </Text>
       </View>
     </SafeAreaView>
