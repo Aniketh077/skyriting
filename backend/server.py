@@ -619,18 +619,46 @@ async def get_all_orders(current_user: dict = Depends(get_admin_user)):
 async def update_order_status(order_id: str, status: str = Body(..., embed=True), current_user: dict = Depends(get_admin_user)):
     try:
         result = await db.orders.update_one(
-            {"_id": ObjectId(order_id)},
-            {"$set": {"status": status, "updated_at": datetime.utcnow()}}
+            {" _id": ObjectId(order_id)},
+            {" $set": {"status": status, "updated_at": datetime.utcnow()}}
         )
         
         if result.matched_count == 0:
             raise HTTPException(status_code=404, detail="Order not found")
+        
+        # Send status update email
+        try:
+            order = await db.orders.find_one({"_id": ObjectId(order_id)})
+            user = await db.users.find_one({"_id": ObjectId(order["user_id"])})
+            if user:
+                order_data_email = {
+                    "order_id": order_id,
+                    "status": status
+                }
+                await email_service.send_order_status_update(order_data_email, user["email"])
+        except Exception as e:
+            print(f"Email sending failed: {e}")
         
         return {"message": "Order status updated successfully"}
     except HTTPException:
         raise
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid order ID")
+
+# Image Upload Route
+@api_router.post("/upload/image")
+async def upload_image(file: UploadFile = File(...), current_user: dict = Depends(get_current_user)):
+    """Upload image and return base64 encoded string"""
+    try:
+        contents = await file.read()
+        base64_encoded = base64.b64encode(contents).decode('utf-8')
+        mime_type = file.content_type or 'image/jpeg'
+        return {
+            "success": True,
+            "image": f"data:{mime_type};base64,{base64_encoded}"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Image upload failed: {str(e)}")
 
 # Wishlist Routes
 @api_router.get("/wishlist")
