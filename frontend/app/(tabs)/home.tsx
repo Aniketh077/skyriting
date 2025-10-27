@@ -586,8 +586,8 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   card: {
-    width: width - 32,
-    height: height * 0.7,
+    width: SCREEN_WIDTH - 32,
+    height: SCREEN_HEIGHT * 0.7,
     backgroundColor: '#1a1a1a',
     borderRadius: 24,
     overflow: 'hidden',
