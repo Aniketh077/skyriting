@@ -771,6 +771,65 @@ class SkyratingAPITester:
         print("   ✅ Enhanced Admin Users Management APIs testing completed")
         return True
 
+    # ==================== PUSH NOTIFICATIONS TESTS (NEW) ====================
+    
+    def test_push_notifications_register_token(self):
+        """Test POST /api/notifications/register-token"""
+        if not self.user_token:
+            self.log_result("Push Notifications - Register Token", False, "No user token available")
+            return False
+        
+        token_data = {
+            "expo_push_token": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]"
+        }
+        
+        success, response, status_code = self.make_request("POST", "/notifications/register-token", token_data, token=self.user_token)
+        
+        if success and "message" in response:
+            self.log_result("Push Notifications - Register Token", True, "Push token registered successfully")
+            return True
+        else:
+            self.log_result("Push Notifications - Register Token", False, f"Status: {status_code}, Response: {response}")
+            return False
+    
+    def test_push_notifications_stats(self):
+        """Test GET /api/admin/notifications/stats"""
+        if not self.admin_token:
+            self.log_result("Push Notifications - Stats", False, "No admin token available")
+            return False
+        
+        success, response, status_code = self.make_request("GET", "/admin/notifications/stats", token=self.admin_token)
+        
+        if success and all(field in response for field in ["total_users", "users_with_notifications_enabled", "coverage_percentage"]):
+            self.log_result("Push Notifications - Stats", True, 
+                          f"Stats: {response['total_users']} total users, {response['users_with_notifications_enabled']} with tokens, {response['coverage_percentage']}% coverage")
+            return True
+        else:
+            self.log_result("Push Notifications - Stats", False, f"Status: {status_code}, Response: {response}")
+            return False
+    
+    def test_push_notifications_send(self):
+        """Test POST /api/admin/notifications/send"""
+        if not self.admin_token:
+            self.log_result("Push Notifications - Send", False, "No admin token available")
+            return False
+        
+        notification_data = {
+            "title": "Test Notification",
+            "body": "This is a test notification from the admin panel"
+        }
+        
+        success, response, status_code = self.make_request("POST", "/admin/notifications/send", notification_data, token=self.admin_token)
+        
+        if success and "message" in response:
+            sent_count = response.get("sent_count", 0)
+            self.log_result("Push Notifications - Send", True, 
+                          f"Notification sent successfully to {sent_count} users")
+            return True
+        else:
+            self.log_result("Push Notifications - Send", False, f"Status: {status_code}, Response: {response}")
+            return False
+
     # ==================== NEW FEATURES TESTS (PRODUCTION) ====================
     
     def test_razorpay_payment_integration(self):
