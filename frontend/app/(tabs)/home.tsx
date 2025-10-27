@@ -200,12 +200,105 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      {/* Header with Search and Notifications */}
       <View style={styles.header}>
         <Text style={styles.logo}>SKYRITING</Text>
         <TouchableOpacity onPress={() => router.push('/notifications' as any)}>
           <Ionicons name="notifications-outline" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
+
+      {/* Filters Bar */}
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false} 
+        style={styles.filtersContainer}
+        contentContainerStyle={styles.filtersContent}
+      >
+        <TouchableOpacity 
+          style={[styles.filterButton, showFilters && styles.filterButtonActive]}
+          onPress={() => setShowFilters(!showFilters)}
+        >
+          <Ionicons name="options" size={16} color={showFilters ? "#000" : "#fff"} />
+          <Text style={[styles.filterText, showFilters && styles.filterTextActive]}>Filters</Text>
+        </TouchableOpacity>
+
+        {showFilters && (
+          <>
+            {/* Brand Filter */}
+            <View style={styles.filterGroup}>
+              <TouchableOpacity
+                style={[styles.filterChip, selectedBrand === 'all' && styles.filterChipSelected]}
+                onPress={() => setSelectedBrand('all')}
+              >
+                <Text style={[styles.filterChipText, selectedBrand === 'all' && styles.filterChipTextSelected]}>
+                  All Brands
+                </Text>
+              </TouchableOpacity>
+              {brands.slice(0, 3).map(brand => (
+                <TouchableOpacity
+                  key={brand._id}
+                  style={[styles.filterChip, selectedBrand === brand._id && styles.filterChipSelected]}
+                  onPress={() => setSelectedBrand(brand._id)}
+                >
+                  <Text style={[styles.filterChipText, selectedBrand === brand._id && styles.filterChipTextSelected]}>
+                    {brand.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Gender Filter */}
+            <View style={styles.filterGroup}>
+              <TouchableOpacity
+                style={[styles.filterChip, selectedGender === 'all' && styles.filterChipSelected]}
+                onPress={() => setSelectedGender('all')}
+              >
+                <Text style={[styles.filterChipText, selectedGender === 'all' && styles.filterChipTextSelected]}>All</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.filterChip, selectedGender === 'men' && styles.filterChipSelected]}
+                onPress={() => setSelectedGender('men')}
+              >
+                <Text style={[styles.filterChipText, selectedGender === 'men' && styles.filterChipTextSelected]}>Men</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.filterChip, selectedGender === 'women' && styles.filterChipSelected]}
+                onPress={() => setSelectedGender('women')}
+              >
+                <Text style={[styles.filterChipText, selectedGender === 'women' && styles.filterChipTextSelected]}>Women</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Category Filter */}
+            <View style={styles.filterGroup}>
+              {categories.map(cat => (
+                <TouchableOpacity
+                  key={cat}
+                  style={[styles.filterChip, selectedCategory === cat && styles.filterChipSelected]}
+                  onPress={() => setSelectedCategory(cat)}
+                >
+                  <Text style={[styles.filterChipText, selectedCategory === cat && styles.filterChipTextSelected]}>
+                    {cat}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
+
+        <TouchableOpacity 
+          style={styles.filterButton}
+          onPress={() => {
+            setSelectedBrand('all');
+            setSelectedGender('all');
+            setSelectedCategory('all');
+          }}
+        >
+          <Ionicons name="refresh" size={16} color="#fff" />
+          <Text style={styles.filterText}>Reset</Text>
+        </TouchableOpacity>
+      </ScrollView>
 
       <View style={styles.cardContainer}>
         {currentProduct && (
