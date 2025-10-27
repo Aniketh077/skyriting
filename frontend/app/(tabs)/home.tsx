@@ -173,19 +173,30 @@ export default function HomeScreen() {
     );
   }
 
-  if (products.length === 0) {
+  const categories = ['all', 'Casual', 'Outerwear', 'Footwear', 'Pants'];
+
+  if (filteredProducts.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.emptyContainer}>
           <Ionicons name="shirt-outline" size={64} color="#666" />
-          <Text style={styles.emptyText}>No products available</Text>
-          <Text style={styles.emptySubtext}>Check back later for new arrivals</Text>
+          <Text style={styles.emptyText}>No products match your filters</Text>
+          <TouchableOpacity 
+            style={styles.resetButton}
+            onPress={() => {
+              setSelectedBrand('all');
+              setSelectedGender('all');
+              setSelectedCategory('all');
+            }}
+          >
+            <Text style={styles.resetButtonText}>Reset Filters</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
   }
 
-  const currentProduct = products[currentIndex];
+  const currentProduct = filteredProducts[currentIndex];
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
