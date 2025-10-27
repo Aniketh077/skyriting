@@ -19,8 +19,12 @@ async def setup_initial_data():
     
     print("Setting up initial data...")
     
+    # Get admin credentials from env
+    admin_email = os.getenv("ADMIN_EMAIL", "admin@skyriting.com")
+    admin_password = os.getenv("ADMIN_PASSWORD", "admin123")
+    
     # Create admin user
-    admin_exists = await db.users.find_one({"email": "admin@skyriting.com"})
+    admin_exists = await db.users.find_one({"email": admin_email})
     if not admin_exists:
         admin = {
             "email": "admin@skyriting.com",
