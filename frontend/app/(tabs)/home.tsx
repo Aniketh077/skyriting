@@ -128,6 +128,53 @@ export default function HomeScreen() {
     }
   };
 
+  const handleOpenProduct = () => {
+    router.push(`/product/${currentProduct._id}` as any);
+  };
+
+  // Reset animation when product changes
+  useEffect(() => {
+    translateX.value = withSpring(0);
+    translateY.value = withSpring(0);
+  }, [currentIndex]);
+
+  // Pan gesture for swiping
+  const panGesture = Gesture.Pan()
+    .onUpdate((event) => {
+      translateX.value = event.translationX;
+      translateY.value = event.translationY;
+    })
+    .onEnd((event) => {
+      const threshold = width * 0.3;
+      
+      if (Math.abs(event.translationX) > threshold) {
+        // Swipe left or right
+        if (event.translationX > 0) {
+          // Swipe right - Like
+          runOnJS(handleLike)();
+        } else {
+          // Swipe left - Skip
+          runOnJS(handleSkip)();
+        }
+      } else {
+        // Return to center
+        translateX.value = withSpring(0);
+        translateY.value = withSpring(0);
+      }
+    });
+
+  const animatedStyle = useAnimatedStyle(() => {
+    const rotateZ = (translateX.value / width) * 25; // Rotation effect
+    
+    return {
+      transform: [
+        { translateX: translateX.value },
+        { translateY: translateY.value },
+        { rotateZ: `${rotateZ}deg` },
+      ],
+    };
+  });
+
   const handleAddToCart = async () => {
     const product = filteredProducts[currentIndex];
     try {
