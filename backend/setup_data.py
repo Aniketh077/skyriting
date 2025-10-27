@@ -27,8 +27,8 @@ async def setup_initial_data():
     admin_exists = await db.users.find_one({"email": admin_email})
     if not admin_exists:
         admin = {
-            "email": "admin@skyriting.com",
-            "password_hash": pwd_context.hash("admin123"),
+            "email": admin_email,
+            "password_hash": pwd_context.hash(admin_password),
             "name": "Admin User",
             "gender": None,
             "bio": "System Administrator",
@@ -43,7 +43,7 @@ async def setup_initial_data():
             "updated_at": datetime.utcnow()
         }
         await db.users.insert_one(admin)
-        print("✓ Admin user created (admin@skyriting.com / admin123)")
+        print(f"✓ Admin user created ({admin_email} / {admin_password})")
     else:
         print("✓ Admin user already exists")
     
