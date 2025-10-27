@@ -146,6 +146,30 @@ export default function HomeScreen() {
     router.push(`/product/${currentProduct._id}` as any);
   };
 
+  const handleShare = async () => {
+    try {
+      const productUrl = `https://outfit-discovery.preview.emergentagent.com/product/${currentProduct._id}`;
+      const message = `Check out ${currentProduct.name} for $${currentProduct.price} on Skyriting!\n\n${productUrl}`;
+      
+      const result = await Share.share({
+        message: message,
+        title: currentProduct.name,
+        url: productUrl, // For iOS
+      });
+
+      if (result.action === Share.sharedAction) {
+        if (result.activityType) {
+          console.log('Shared with activity type:', result.activityType);
+        } else {
+          console.log('Shared successfully');
+        }
+      }
+    } catch (error: any) {
+      Alert.alert('Error', 'Failed to share product');
+      console.error('Share error:', error);
+    }
+  };
+
   // Reset animation when product changes
   useEffect(() => {
     translateX.value = withSpring(0);
