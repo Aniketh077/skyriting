@@ -923,6 +923,16 @@ class SkyratingAPITester:
         self.test_admin_list_users()
         print()
 
+        # NEW FEATURES TESTS (PRODUCTION)
+        print("🚀 PRODUCTION: NEW FEATURES TESTS")
+        print("-" * 30)
+        self.test_razorpay_payment_integration()
+        self.test_image_upload()
+        self.test_enhanced_orders_with_payment()
+        self.test_product_filters()
+        self.test_complete_user_journey()
+        print()
+
         # ERROR CASE TESTS
         print("⚠️ ERROR CASE TESTS")
         print("-" * 30)
