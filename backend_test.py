@@ -10,7 +10,7 @@ import sys
 from typing import Dict, Any, Optional
 
 # Configuration
-BASE_URL = "https://outfit-discovery.preview.emergentagent.com/api"
+BASE_URL = "https://skyriting-app.preview.emergentagent.com/api"
 ADMIN_EMAIL = "aniketh0701@gmail.com"
 ADMIN_PASSWORD = "Admin@123"
 
