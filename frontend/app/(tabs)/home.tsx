@@ -360,68 +360,76 @@ export default function HomeScreen() {
 
       <View style={styles.cardContainer}>
         {currentProduct && (
-          <View style={styles.card}>
-            {currentProduct.images && currentProduct.images[0] ? (
-              <Image
-                source={{ uri: currentProduct.images[0] }}
-                style={styles.productImage}
-                resizeMode="contain"
-              />
-            ) : (
-              <View style={styles.placeholderImage}>
-                <Ionicons name="shirt-outline" size={80} color="#333" />
-              </View>
-            )}
-
-            {/* Action Icons on Right Side */}
-            <View style={styles.sideActions}>
+          <GestureDetector gesture={panGesture}>
+            <Animated.View style={[styles.card, animatedStyle]}>
               <TouchableOpacity 
-                style={styles.sideActionButton}
-                onPress={handleAddToCart}
+                activeOpacity={0.9}
+                onPress={handleOpenProduct}
+                style={styles.cardTouchable}
               >
-                <Ionicons name="cart-outline" size={24} color="#fff" />
+                {currentProduct.images && currentProduct.images[0] ? (
+                  <Image
+                    source={{ uri: currentProduct.images[0] }}
+                    style={styles.productImage}
+                    resizeMode="contain"
+                  />
+                ) : (
+                  <View style={styles.placeholderImage}>
+                    <Ionicons name="shirt-outline" size={80} color="#333" />
+                  </View>
+                )}
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.sideActionButton}
-                onPress={handleLike}
-              >
-                <Ionicons name="heart-outline" size={24} color="#fff" />
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.sideActionButton}
-                onPress={() => {}}
-              >
-                <Ionicons name="share-social-outline" size={24} color="#fff" />
-              </TouchableOpacity>
-            </View>
 
-            {/* Brand Badge */}
-            <TouchableOpacity 
-              style={styles.brandBadge}
-              onPress={() => handleBrandClick(currentProduct.brand_id)}
-            >
-              <Ionicons name="pricetag" size={16} color="#fff" />
-              <Text style={styles.brandBadgeText}>View Brand</Text>
-            </TouchableOpacity>
-
-            {/* Product Info at Bottom */}
-            <View style={styles.productInfo}>
-              <View style={styles.productHeader}>
-                <View style={styles.productDetails}>
-                  <Text style={styles.productName}>{currentProduct.name}</Text>
-                  <Text style={styles.productPrice}>${currentProduct.price}</Text>
-                </View>
+              {/* Action Icons on Right Side */}
+              <View style={styles.sideActions}>
                 <TouchableOpacity 
-                  style={styles.buyNowButton}
-                  onPress={handleBuyNow}
+                  style={styles.sideActionButton}
+                  onPress={handleAddToCart}
                 >
-                  <Text style={styles.buyNowText}>Buy now</Text>
+                  <Ionicons name="cart-outline" size={24} color="#fff" />
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.sideActionButton}
+                  onPress={handleLike}
+                >
+                  <Ionicons name="heart-outline" size={24} color="#fff" />
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={styles.sideActionButton}
+                  onPress={() => {}}
+                >
+                  <Ionicons name="share-social-outline" size={24} color="#fff" />
                 </TouchableOpacity>
               </View>
-            </View>
-          </View>
+
+              {/* Brand Badge */}
+              <TouchableOpacity 
+                style={styles.brandBadge}
+                onPress={() => handleBrandClick(currentProduct.brand_id)}
+              >
+                <Ionicons name="pricetag" size={16} color="#fff" />
+                <Text style={styles.brandBadgeText}>View Brand</Text>
+              </TouchableOpacity>
+
+              {/* Product Info at Bottom */}
+              <View style={styles.productInfo}>
+                <View style={styles.productHeader}>
+                  <View style={styles.productDetails}>
+                    <Text style={styles.productName}>{currentProduct.name}</Text>
+                    <Text style={styles.productPrice}>${currentProduct.price}</Text>
+                  </View>
+                  <TouchableOpacity 
+                    style={styles.buyNowButton}
+                    onPress={handleBuyNow}
+                  >
+                    <Text style={styles.buyNowText}>Buy now</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Animated.View>
+          </GestureDetector>
         )}
       </View>
     </SafeAreaView>
