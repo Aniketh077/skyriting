@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -18,6 +19,7 @@ const { width, height } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
 export default function HomeScreen() {
+  const router = useRouter();
   const [products, setProducts] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -94,6 +96,30 @@ export default function HomeScreen() {
     }
   };
 
+  const handleBuyNow = async () => {
+    const product = products[currentIndex];
+    try {
+      // Add to cart first
+      const cartItems = [{
+        product_id: product._id,
+        name: product.name,
+        price: product.price,
+        quantity: 1,
+        image: product.images?.[0]
+      }];
+      
+      await AsyncStorage.setItem('cart', JSON.stringify(cartItems));
+      // Navigate to cart for checkout
+      router.push('/(tabs)/cart');
+    } catch (error) {
+      console.error('Error with buy now:', error);
+    }
+  };
+
+  const handleBrandClick = async (brandId: string) => {
+    router.push(`/brand/${brandId}` as any);
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -120,6 +146,9 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.logo}>SKYRITING</Text>
+        <TouchableOpacity onPress={() => router.push('/notifications' as any)}>
+          <Ionicons name="notifications-outline" size={24} color="#fff" />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.cardContainer}>
@@ -137,12 +166,29 @@ export default function HomeScreen() {
               </View>
             )}
 
+            {/* Brand Logo Badge */}
+            <TouchableOpacity 
+              style={styles.brandBadge}
+              onPress={() => handleBrandClick(currentProduct.brand_id)}
+            >
+              <Ionicons name="pricetag" size={16} color="#fff" />
+              <Text style={styles.brandBadgeText}>View Brand</Text>
+            </TouchableOpacity>
+
             <View style={styles.productInfo}>
               <Text style={styles.productName}>{currentProduct.name}</Text>
               <Text style={styles.productPrice}>${currentProduct.price}</Text>
               <Text style={styles.productDescription} numberOfLines={2}>
                 {currentProduct.description}
               </Text>
+              
+              {/* Buy Now Button */}
+              <TouchableOpacity 
+                style={styles.buyNowButton}
+                onPress={handleBuyNow}
+              >
+                <Text style={styles.buyNowText}>Buy Now</Text>
+              </TouchableOpacity>
             </View>
           </View>
         )}
@@ -212,6 +258,8 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 24,
     paddingVertical: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
   logo: {
@@ -228,26 +276,38 @@ const styles = StyleSheet.create({
   },
   card: {
     width: width - 32,
-    height: height * 0.6,
+    height: height * 0.65,
     backgroundColor: '#1a1a1a',
     borderRadius: 24,
     overflow: 'hidden',
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
   },
   productImage: {
     width: '100%',
-    height: '70%',
+    height: '55%',
   },
   placeholderImage: {
     width: '100%',
-    height: '70%',
+    height: '55%',
     backgroundColor: '#0a0a0a',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  brandBadge: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  brandBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   productInfo: {
     padding: 20,
@@ -268,12 +328,24 @@ const styles = StyleSheet.create({
     color: '#888',
     marginTop: 4,
   },
+  buyNowButton: {
+    backgroundColor: '#fff',
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  buyNowText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: '700',
+  },
   actionsContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 24,
-    gap: 32,
+    gap: 24,
   },
   actionButton: {
     width: 64,
@@ -284,6 +356,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#333',
+  },
+  cartButton: {
+    backgroundColor: '#fff',
+    borderColor: '#fff',
   },
   likeButton: {
     backgroundColor: '#ff4444',
