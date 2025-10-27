@@ -307,7 +307,7 @@ export default function HomeScreen() {
               <Image
                 source={{ uri: currentProduct.images[0] }}
                 style={styles.productImage}
-                resizeMode="cover"
+                resizeMode="contain"
               />
             ) : (
               <View style={styles.placeholderImage}>
@@ -315,7 +315,31 @@ export default function HomeScreen() {
               </View>
             )}
 
-            {/* Brand Logo Badge */}
+            {/* Action Icons on Right Side */}
+            <View style={styles.sideActions}>
+              <TouchableOpacity 
+                style={styles.sideActionButton}
+                onPress={handleAddToCart}
+              >
+                <Ionicons name="cart-outline" size={24} color="#fff" />
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.sideActionButton}
+                onPress={handleLike}
+              >
+                <Ionicons name="heart-outline" size={24} color="#fff" />
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.sideActionButton}
+                onPress={() => {}}
+              >
+                <Ionicons name="share-social-outline" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Brand Badge */}
             <TouchableOpacity 
               style={styles.brandBadge}
               onPress={() => handleBrandClick(currentProduct.brand_id)}
@@ -324,52 +348,23 @@ export default function HomeScreen() {
               <Text style={styles.brandBadgeText}>View Brand</Text>
             </TouchableOpacity>
 
+            {/* Product Info at Bottom */}
             <View style={styles.productInfo}>
-              <Text style={styles.productName}>{currentProduct.name}</Text>
-              <Text style={styles.productPrice}>${currentProduct.price}</Text>
-              <Text style={styles.productDescription} numberOfLines={2}>
-                {currentProduct.description}
-              </Text>
-              
-              {/* Buy Now Button */}
-              <TouchableOpacity 
-                style={styles.buyNowButton}
-                onPress={handleBuyNow}
-              >
-                <Text style={styles.buyNowText}>Buy Now</Text>
-              </TouchableOpacity>
+              <View style={styles.productHeader}>
+                <View style={styles.productDetails}>
+                  <Text style={styles.productName}>{currentProduct.name}</Text>
+                  <Text style={styles.productPrice}>${currentProduct.price}</Text>
+                </View>
+                <TouchableOpacity 
+                  style={styles.buyNowButton}
+                  onPress={handleBuyNow}
+                >
+                  <Text style={styles.buyNowText}>Buy now</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         )}
-      </View>
-
-      <View style={styles.actionsContainer}>
-        <TouchableOpacity 
-          style={styles.actionButton}
-          onPress={handleSkip}
-        >
-          <Ionicons name="close" size={32} color="#ff4444" />
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={[styles.actionButton, styles.cartButton]}
-          onPress={handleAddToCart}
-        >
-          <Ionicons name="cart" size={28} color="#000" />
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={[styles.actionButton, styles.likeButton]}
-          onPress={handleLike}
-        >
-          <Ionicons name="heart" size={32} color="#fff" />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.progressContainer}>
-        <Text style={styles.progressText}>
-          {currentIndex + 1} / {filteredProducts.length}
-        </Text>
       </View>
     </SafeAreaView>
   );
