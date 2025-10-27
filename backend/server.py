@@ -38,6 +38,9 @@ SECRET_KEY = os.getenv("SECRET_KEY", "skyriting-secret-key-change-in-production"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 
+# Razorpay client
+razorpay_client = razorpay.Client(auth=(os.getenv("RAZORPAY_KEY_ID"), os.getenv("RAZORPAY_KEY_SECRET")))
+
 # Create the main app
 app = FastAPI(title="Skyriting API")
 api_router = APIRouter(prefix="/api")
