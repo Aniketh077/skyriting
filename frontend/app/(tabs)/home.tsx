@@ -346,7 +346,7 @@ export default function HomeScreen() {
       <View style={styles.actionsContainer}>
         <TouchableOpacity 
           style={styles.actionButton}
-          onPress={handleSwipeLeft}
+          onPress={handleSkip}
         >
           <Ionicons name="close" size={32} color="#ff4444" />
         </TouchableOpacity>
@@ -360,7 +360,7 @@ export default function HomeScreen() {
 
         <TouchableOpacity 
           style={[styles.actionButton, styles.likeButton]}
-          onPress={handleSwipeRight}
+          onPress={handleLike}
         >
           <Ionicons name="heart" size={32} color="#fff" />
         </TouchableOpacity>
