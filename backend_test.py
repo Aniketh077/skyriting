@@ -96,8 +96,10 @@ class SkyratingAPITester:
 
     def test_auth_register_user(self):
         """Test user registration"""
+        import time
+        unique_email = f"testuser{int(time.time())}@example.com"
         data = {
-            "email": "testuser@example.com",
+            "email": unique_email,
             "password": "testpass123",
             "name": "Test User",
             "gender": "female",
