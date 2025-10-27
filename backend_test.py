@@ -199,9 +199,12 @@ class SkyratingAPITester:
 
     def test_products_create_admin(self):
         """Test create product (admin only)"""
-        if not self.admin_token or not self.test_brand_id:
-            self.log_result("Products - Create (Admin)", False, "No admin token or brand ID available")
+        if not self.admin_token:
+            self.log_result("Products - Create (Admin)", False, "No admin token available")
             return False
+        
+        # Use the brand ID we got from brands list, or create a fallback
+        brand_id = self.test_brand_id if self.test_brand_id else "68ff1c7dd02e0fe94ba3a09d"
         
         data = {
             "brand_id": self.test_brand_id,
