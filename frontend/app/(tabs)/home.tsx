@@ -154,7 +154,7 @@ export default function HomeScreen() {
   const handleShare = async () => {
     try {
       const productUrl = `https://skyriting-app.preview.emergentagent.com/product/${currentProduct._id}`;
-      const message = `Check out ${currentProduct.name} for $${currentProduct.price} on Skyriting!\n\n${productUrl}`;
+      const message = `Check out ${currentProduct.name} for ${formatINR(currentProduct.price)} on Skyriting!\n\n${productUrl}`;
       
       const result = await Share.share({
         message: message,
