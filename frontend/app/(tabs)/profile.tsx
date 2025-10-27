@@ -143,6 +143,22 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.menuContainer}>
+          {user?.role === 'admin' && (
+            <TouchableOpacity 
+              style={[styles.menuItem, styles.adminItem]}
+              onPress={() => router.push('/admin/dashboard' as any)}
+            >
+              <View style={[styles.menuIconContainer, { backgroundColor: '#FF9800' }]}>
+                <Ionicons name="shield-checkmark" size={24} color="#FF9800" />
+              </View>
+              <View style={styles.menuTextContainer}>
+                <Text style={styles.menuText}>Admin Dashboard</Text>
+                <Text style={styles.menuSubtext}>Manage app content</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={24} color="#666" />
+            </TouchableOpacity>
+          )}
+
           <TouchableOpacity style={styles.menuItem} onPress={navigateToWishlist}>
             <View style={styles.menuIconContainer}>
               <Ionicons name="heart" size={24} color="#ff4444" />
