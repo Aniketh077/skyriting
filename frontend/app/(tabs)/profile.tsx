@@ -362,6 +362,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ff4444',
   },
+  adminItem: {
+    borderWidth: 1,
+    borderColor: '#FF9800',
+    backgroundColor: '#FF980010',
+  },
   logoutText: {
     color: '#ff4444',
   },
