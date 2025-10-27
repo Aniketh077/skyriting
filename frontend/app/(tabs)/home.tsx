@@ -28,6 +28,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const API_URL = process.env.EXPO_PUBLIC_BACKEND_URL;
 
+// Card dimensions
+const CARD_WIDTH = SCREEN_WIDTH - 32;
+const CARD_HEIGHT = SCREEN_HEIGHT * 0.7;
+
 // Responsive breakpoints
 const isSmallDevice = SCREEN_WIDTH < 375;
 const isMediumDevice = SCREEN_WIDTH >= 375 && SCREEN_WIDTH < 768;
