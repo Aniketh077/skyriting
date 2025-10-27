@@ -125,8 +125,8 @@ async def setup_initial_data():
     
     print("\nSetup complete!")
     print("\nYou can login with:")
-    print("Email: admin@skyriting.com")
-    print("Password: admin123")
+    print(f"Email: {admin_email}")
+    print(f"Password: {admin_password}")
     
     client.close()
 
