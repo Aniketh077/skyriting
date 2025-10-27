@@ -539,19 +539,54 @@ async def comment_on_post(post_id: str, comment_data: CommentCreate, current_use
         raise HTTPException(status_code=400, detail="Invalid post ID")
 
 # Order Routes
+@api_router.post("/orders/create-payment")
+async def create_payment_order(order_data: OrderCreate, current_user: dict = Depends(get_current_user)):
+    """Create Razorpay payment order"""
+    try:
+        amount = int(order_data.total_amount * 100)  # Convert to paise
+        payment_order = razorpay_client.order.create({
+            "amount": amount,
+            "currency": "INR",
+            "payment_capture": 1
+        })
+        
+        return {
+            "order_id": payment_order["id"],
+            "amount": payment_order["amount"],
+            "currency": payment_order["currency"],
+            "razorpay_key": os.getenv("RAZORPAY_KEY_ID")
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Payment order creation failed: {str(e)}")
+
 @api_router.post("/orders")
-async def create_order(order_data: OrderCreate, current_user: dict = Depends(get_current_user)):
+async def create_order(order_data: OrderCreate, razorpay_payment_id: Optional[str] = None, current_user: dict = Depends(get_current_user)):
     order_dict = order_data.dict()
     order_dict.update({
         "user_id": str(current_user["_id"]),
-        "status": "pending",
-        "payment_status": "completed",  # Mock payment
+        "status": "confirmed" if razorpay_payment_id else "pending",
+        "payment_status": "completed" if razorpay_payment_id else "pending",
+        "razorpay_payment_id": razorpay_payment_id,
         "created_at": datetime.utcnow(),
         "updated_at": datetime.utcnow()
     })
     
     result = await db.orders.insert_one(order_dict)
-    return {"id": str(result.inserted_id), "message": "Order placed successfully", "order_id": str(result.inserted_id)}
+    order_id = str(result.inserted_id)
+    
+    # Send order confirmation email
+    try:
+        order_data_email = {
+            "order_id": order_id,
+            "items": order_data.items,
+            "total_amount": order_data.total_amount,
+            "status": order_dict["status"]
+        }
+        await email_service.send_order_confirmation(order_data_email, current_user["email"])
+    except Exception as e:
+        print(f"Email sending failed: {e}")
+    
+    return {"id": order_id, "message": "Order placed successfully", "order_id": order_id}
 
 @api_router.get("/orders/my-orders")
 async def get_my_orders(current_user: dict = Depends(get_current_user)):
